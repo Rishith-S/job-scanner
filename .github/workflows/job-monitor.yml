@@ -1,0 +1,80 @@
+name: Job Monitor
+
+on:
+  schedule:
+    - cron: "30 */2 * * *"   # every 2 hours at :30 (offset avoids top-of-hour traffic)
+  workflow_dispatch:          # manual run button in the Actions tab
+
+concurrency:
+  group: job-monitor
+  cancel-in-progress: false
+
+permissions:
+  contents: write             # required to commit the updated state DB back
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out repo (with prior state)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests pandas
+
+      - name: Restore state DB from cache (faster than checkout for big DBs)
+        id: cache-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: job_state.sqlite3
+          key: job-state-${{ github.run_id }}
+          restore-keys: |
+            job-state-
+
+      - name: Run monitor scan + email alerts
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          ALERT_TO: ${{ secrets.ALERT_TO }}
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+        run: |
+          python3 run_monitor.py
+
+      - name: Commit updated state back to repo
+        if: always() && hashFiles('job_state.sqlite3') != ''
+        run: |
+          git config user.name  "job-monitor-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add job_state.sqlite3
+          git diff --cached --quiet && echo "state unchanged" || git commit -m "state update: $(date -u +%Y-%m-%dT%H:%M:%SZ) [skip ci]"
+          git pull --rebase origin "${{ github.ref_name }}" || true
+          git push origin HEAD:"${{ github.ref_name }}"
+
+      - name: Refresh cache with new state
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: job_state.sqlite3
+          key: job-state-${{ github.run_id }}
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: monitor-failure-log-${{ github.run_id }}
+          path: |
+            *.log
+            job_state.sqlite3
+          retention-days: 7
