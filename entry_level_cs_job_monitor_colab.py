@@ -2314,13 +2314,17 @@ def reconcile_complete_scans(
         # posting of the feed: absence must mean "closed," not "not fetched."
         # A delta snapshot only covers recent postings, so a delta-then-delta
         # (or unknown-mode) transition forces a one-run re-baseline instead.
-        adapter_matches = bool(
-            source_row
-            and source_row[2] == fingerprint
-            and source_row[3] == "full"
-            and scan.get("scan_mode") == "delta"
-        )
-        prior_completed_at = parse_utc(source_row[1]) if adapter_matches else None
+        adapter_matches = bool(source_row and source_row[2] == fingerprint)
+        # NEW detection is safe whenever the PREVIOUS completed scan persisted a
+        # full snapshot of this feed: a stable ID absent from job_state genuinely
+        # was not there before, whether this run is full or delta.
+        prior_is_full = bool(adapter_matches and source_row[3] == "full")
+        # REOPENED detection additionally needs THIS run to have observed every
+        # posting of the feed: absence must mean "closed," not "not fetched."
+        # A delta snapshot only covers recent postings, so REOPENED is evaluated
+        # only when the current scan itself is full.
+        reopened_detection = prior_is_full and scan.get("scan_mode") == "full"
+        prior_completed_at = parse_utc(source_row[1]) if reopened_detection else None
         prior_jobs = {}
         if adapter_matches:
             prior_jobs = {
