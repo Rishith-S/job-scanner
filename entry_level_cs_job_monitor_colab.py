@@ -44,12 +44,12 @@ from IPython.display import display
 # ---------------------------------------------------------------------------
 # Runtime and persistence controls
 # ---------------------------------------------------------------------------
-MAX_WORKERS = 36
+MAX_WORKERS = 20
 PER_REQUEST_TIMEOUT_SECONDS = 8.0
 # Adapter-specific query fan-out is bounded by this shared semaphore, so
-# Amazon/Microsoft shards cannot stampede an ATS beyond the requested 35–40
+# Amazon/Microsoft shards cannot stampede an ATS beyond the requested 18–20
 # concurrent request envelope.
-MAX_IN_FLIGHT_REQUESTS = 40
+MAX_IN_FLIGHT_REQUESTS = 20
 REQUEST_SLOTS = BoundedSemaphore(MAX_IN_FLIGHT_REQUESTS)
 # A complete source scan may take longer than ten seconds.  The previous global
 # seven-second deadline made the output incomplete by construction.  Large
@@ -60,7 +60,7 @@ SOURCE_SCAN_BUDGET_SECONDS = 420.0
 # a half-second blip just burns the retry.
 MAX_HTTP_ATTEMPTS = 3
 RETRY_DELAY_SECONDS = 0.5
-RATE_LIMIT_BACKOFF_SECONDS = 4.0
+RATE_LIMIT_BACKOFF_SECONDS = 8.0
 
 # ---------------------------------------------------------------------------
 # Fast delta mode
@@ -81,10 +81,10 @@ DELTA_SAFETY_WINDOW_HOURS = 24.0
 # date cutoff cannot miss newer postings deeper in the result set.
 DELTA_SORTED_KINDS = frozenset({"amazon", "microsoft", "eightfold", "apple_html"})
 # Workday scans the same ~40 title shards as Amazon/Microsoft/Eightfold, but
-# serially in the original version: at a shared 40-slot request semaphore and
+# serially in the original version: at a shared 20-slot request semaphore and
 # an 8 s per-request timeout that cannot finish inside any sane budget. Give it
 # the same bounded inner shard pool as the other sharded adapters.
-WORKDAY_SHARD_WORKERS = 5
+WORKDAY_SHARD_WORKERS = 3
 
 # Workday CXS and Amazon both cap their broad, unfiltered public searches.
 # The monitor therefore exhausts a fixed, title-policy search scope instead of
@@ -95,16 +95,16 @@ WORKDAY_CXS_RESULT_WINDOW = 2_000
 AMAZON_PAGE_SIZE = 100
 AMAZON_MAX_PAGES_PER_QUERY = 101  # page 101 reveals Amazon's 10,000-result cap
 AMAZON_RESULT_WINDOW = 10_000
-# Amazon is one source among 36 outer workers. Five independent title shards
-# keep the combined request fan-out at roughly 40 while avoiding a one-minute
+# Amazon is one source among 20 outer workers. Three independent title shards
+# keep the combined request fan-out at roughly 20 while avoiding a one-minute
 # serial Amazon scan.
-AMAZON_SHARD_WORKERS = 5
+AMAZON_SHARD_WORKERS = 3
 MICROSOFT_PAGE_SIZE = 10
 MICROSOFT_MAX_PAGES_PER_QUERY = 501
-MICROSOFT_SHARD_WORKERS = 5
+MICROSOFT_SHARD_WORKERS = 3
 EIGHTFOLD_PAGE_SIZE = 10
 EIGHTFOLD_MAX_PAGES_PER_QUERY = 501
-EIGHTFOLD_SHARD_WORKERS = 5
+EIGHTFOLD_SHARD_WORKERS = 3
 
 # Every literal accepted by TECHNICAL_RE is represented below.  These are
 # *source-query shards*, not profile preferences: general, flat SWE roles are

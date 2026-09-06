@@ -43,6 +43,11 @@ jobs:
           restore-keys: |
             job-state-
 
+      - name: Pick scan half (alternate A/B by run number)
+        run: |
+          if [ $(( ${{ github.run_number }} % 2 )) -eq 1 ]; then echo "SCAN_HALF=A" >> "$GITHUB_ENV"; else echo "SCAN_HALF=B" >> "$GITHUB_ENV"; fi
+          grep SCAN_HALF "$GITHUB_ENV" || true
+
       - name: Run monitor scan + email alerts
         env:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}

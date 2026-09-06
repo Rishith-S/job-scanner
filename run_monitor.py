@@ -181,6 +181,23 @@ def health_summary(health_df) -> str:
 
 
 # ---------------------------------------------------------------------------
+# A/B halves: alternate companies across runs so each GitHub run hammers
+# half the boards (~4 h cadence per company — still fine since grad reqs stay
+# open for days). Companies skipped in a run keep their baseline untouched:
+# reconcile only touches companies it actually scanned.
+# ---------------------------------------------------------------------------
+def apply_scan_half(module) -> None:
+    half = os.environ.get("SCAN_HALF", "all").strip().upper()
+    if half not in ("A", "B"):
+        return
+    names = sorted(t["company"] for t in module.TARGETS)
+    mid = (len(names) + 1) // 2
+    keep = set(names[:mid] if half == "A" else names[mid:])
+    module.TARGETS = [t for t in module.TARGETS if t["company"] in keep]
+    print(f"[halves] SCAN_HALF={half}: scanning {len(module.TARGETS)}/{len(names)} companies")
+
+
+# ---------------------------------------------------------------------------
 # Modes
 # ---------------------------------------------------------------------------
 def selfcheck(module) -> int:
@@ -189,8 +206,15 @@ def selfcheck(module) -> int:
     print(f"fast_delta: {getattr(module, 'FAST_DELTA_MODE', False)}")
     print(f"budget_s: {module.SOURCE_SCAN_BUDGET_SECONDS}")
     print(f"db_path: {module.STATE_DB_PATH}")
-    assert len(module.TARGETS) == module.EXPECTED_COMPANY_COUNT
-    print("SELFCHECK PASS")
+    half = os.environ.get("SCAN_HALF", "all").strip().upper()
+    if half in ("A", "B"):
+        assert set(t["company"] for t in module.TARGETS) <= set(module.EXPECTED_COMPANIES)
+        assert len(module.TARGETS) in (len(module.EXPECTED_COMPANIES) // 2,
+                                       (len(module.EXPECTED_COMPANIES) + 1) // 2)
+        print(f"SELFCHECK PASS (half {half})")
+    else:
+        assert len(module.TARGETS) == module.EXPECTED_COMPANY_COUNT
+        print("SELFCHECK PASS")
     return 0
 
 
@@ -248,6 +272,7 @@ def main() -> int:
     args = parser.parse_args()
 
     module = load_monitor_module()
+    apply_scan_half(module)
 
     if args.selfcheck:
         return selfcheck(module)
