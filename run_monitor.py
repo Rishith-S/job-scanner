@@ -4,8 +4,7 @@
 Designed for GitHub Actions (or any cron host):
   - Loads entry_level_cs_job_monitor_colab.py without IPython/notebook deps.
   - Persists state to ./job_state.sqlite3 (committed back to the repo).
-  - Syncs results to Supabase (sync_supabase.py); the shared site is the
-    channel — no email is sent from here.
+  - The static site reads an exported jobs.json (see export_site.py).
   - Always logs a source-health summary so failures are visible in Actions.
 
 Usage:
@@ -129,33 +128,6 @@ def run_scan(module) -> int:
           f"new/reopened: {len(df)} | currently eligible: {len(current_df)}")
 
     print("\n" + health_summary(health_df))
-
-    # Manifest for sync_supabase.py: which companies this run scanned and how
-    # each fared. The sync derives everything else from job_state.sqlite3.
-    import pandas as pd
-
-    manifest = {
-        "finished_at": finished.isoformat(),
-        "slice": "all",
-        "half": os.environ.get("SCAN_HALF", "").strip().upper() or "all",
-        "entries": [
-            {
-                "company": row["Company"],
-                "ats": row["ATS"],
-                "status": row["Scan Status"],
-                "detail": str(row["Detail"])[:300],
-                "portal": str(row["Board URL"])[:300] if not pd.isna(row["Board URL"]) else "",
-                "scanned_at": pd.Timestamp(row["Scanned At (UTC)"]).isoformat()
-                if not pd.isna(row["Scanned At (UTC)"]) else finished.isoformat(),
-            }
-            for _, row in health_df.iterrows()
-        ],
-    }
-    import json as _json
-
-    with open(HERE / "run_manifest.json", "w") as fh:
-        _json.dump(manifest, fh)
-    print(f"[site] manifest wrote {len(manifest['entries'])} companies.")
 
     if not df.empty:
         n_new = int((df["Monitor State"] == "NEW").sum())
