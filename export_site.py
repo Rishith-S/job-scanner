@@ -49,6 +49,7 @@ def main() -> int:
             for row in conn.execute("SELECT company, last_completed_at FROM source_state")
         }
         jobs, per_company = [], {}
+        labels = {row[0]: (row[1], row[2]) for row in conn.execute("SELECT job_key, label, conf FROM desc_label")}
         for company, stamp in completed.items():
             baseline = _parse_ts(stamp)
             count = 0
@@ -64,10 +65,12 @@ def main() -> int:
                 if ev is None or not module.is_us_only_location(loc or ""):
                     continue
                 label, _rationale = module.profile_fit(title or "")
+                lvl, lvl_conf = labels.get(key, (None, None))
                 jobs.append({
                     "company": company, "title": title or "",
                     "location": loc or "", "url": url or "",
                     "entry_evidence": ev, "profile_fit": label,
+                    "desc_label": lvl, "desc_conf": lvl_conf,
                     "first_seen": (first or "")[:10],
                 })
                 count += 1
@@ -82,6 +85,8 @@ def main() -> int:
         "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "companies": len(per_company),
         "listed": len(jobs),
+        "desc_labeled": sum(1 for j in jobs if j.get("desc_label") in ("ENTRY", "NOT")),
+        "desc_entry": sum(1 for j in jobs if j.get("desc_label") == "ENTRY"),
         "per_company": per_company,
     }
     (SITE_DIR / "meta.json").write_text(json.dumps(meta))
