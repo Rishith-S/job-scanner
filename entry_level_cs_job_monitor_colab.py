@@ -2466,10 +2466,11 @@ def run() -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
                         }
                     )
 
+        expected_now = {t["company"] for t in TARGETS}
         returned = {scan["company"] for scan in scans}
-        assert returned == EXPECTED_COMPANIES and len(scans) == EXPECTED_COMPANY_COUNT, (
-            f"Coverage failure: missing={sorted(EXPECTED_COMPANIES - returned)}, "
-            f"extra={sorted(returned - EXPECTED_COMPANIES)}"
+        assert returned == expected_now and len(scans) == len(expected_now), (
+            f"Coverage failure: missing={sorted(expected_now - returned)}, "
+            f"extra={sorted(returned - expected_now)}"
         )
 
         new_rows, complete_current_rows = reconcile_complete_scans(conn, scans, observed_at)
