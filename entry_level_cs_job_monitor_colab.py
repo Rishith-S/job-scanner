@@ -320,6 +320,10 @@ TARGETS: List[Dict[str, Any]] = [
         "https://sra.samsung.com/careers/",
         "Greenhouse (live-verified)",
     ),
+    # --- 2026-09-07 YC sponsor batch: Ashby boards live-verified by probe ---
+    ashby("Conductor", "conductor", "https://jobs.ashbyhq.com/conductor"),
+    ashby("One Robot", "onerobot", "https://jobs.ashbyhq.com/onerobot"),
+    ashby("Sim", "sim", "https://jobs.ashbyhq.com/sim"),
     phenom_html("eBay", "https://jobs.ebayinc.com/us/en/search-results"),
 ]
 
@@ -339,6 +343,7 @@ EXPECTED_COMPANIES = frozenset(
         "Qualcomm", "Micron", "Applied Materials",
         "MongoDB", "Robinhood", "Okta", "Block (Square / Cash App)", "LinkedIn",
         "Samsung Research America",
+        "Conductor", "One Robot", "Sim",
     }
 )
 EXPECTED_COMPANY_COUNT = len(EXPECTED_COMPANIES)
