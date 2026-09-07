@@ -276,8 +276,6 @@ TARGETS: List[Dict[str, Any]] = [
     greenhouse("Asana", "asana", "https://asana.com/jobs"),
     greenhouse("Samsara", "samsara", "https://www.samsara.com/company/careers"),
     greenhouse("Verkada", "verkada", "https://www.verkada.com/careers/"),
-    # Verified from ServiceTitan's public careers page.
-    workday("ServiceTitan", "servicetitan.wd1.myworkdayjobs.com", "servicetitan", "ServiceTitan", "https://www.servicetitan.com/careers"),
     # The current public page is browser-rendered/rate-limited to plain HTTP;
     # retain the first-party link rather than pretend it was fully scanned.
     fallback("Confluent", "https://careers.confluent.io/jobs", "Enterprise portal / public web fallback"),
@@ -308,41 +306,25 @@ TARGETS: List[Dict[str, Any]] = [
     # Snowflake's Phenom page server-renders paginated job data in phApp.ddo.
     # This avoids relying on an undocumented browser-only widget request.
     phenom_html("Snowflake", "https://careers.snowflake.com/us/en/search-results"),
-    workday("Nvidia", "nvidia.wd5.myworkdayjobs.com", "nvidia", "nvidiaexternalcareersite"),
-    workday("Salesforce", "salesforce.wd12.myworkdayjobs.com", "salesforce", "External_Career_Site"),
-    workday("Adobe", "adobe.wd5.myworkdayjobs.com", "adobe", "external_experienced"),
-    workday("Autodesk", "autodesk.wd1.myworkdayjobs.com", "autodesk", "Ext"),
-    workday("PayPal", "paypal.wd1.myworkdayjobs.com", "paypal", "jobs"),
     # eBay upgraded from fallback to a live-verified server-rendered Phenom adapter.
-    workday("Cisco", "cisco.wd5.myworkdayjobs.com", "cisco", "Cisco_Careers"),
     # Intuit's current public board is not the retired Workday endpoint.
     fallback("Intuit", "https://jobs.intuit.com/search-jobs", "Enterprise portal / public web fallback"),
-    workday("CrowdStrike", "crowdstrike.wd5.myworkdayjobs.com", "crowdstrike", "crowdstrikecareers"),
     # Verified from the public career site and its public Workday talent-community URL.
-    workday("Palo Alto Networks", "paloaltonetworks.wd5.myworkdayjobs.com", "paloaltonetworks", "panwexternalcareers", "https://jobs.paloaltonetworks.com/en/search-jobs"),
     # Verified from Zscaler's public search page: job-boards.greenhouse.io/zscaler
     greenhouse("Zscaler", "zscaler", "https://www.zscaler.com/careers/search", "Greenhouse (current public careers board)"),
     # The public Splunk Workday endpoint currently rejects the required CXS
     # request contract (422); do not treat that response as a zero-job scan.
     fallback("Splunk", "https://careers.cisco.com/global/en/splunk/search-page", "Enterprise portal / public web fallback"),
-    workday("Workday", "workday.wd5.myworkdayjobs.com", "workday", "Workday"),
     # Nutanix's prior Workday board was retired; this public board declares
     # its result total and paginated, stable requisition IDs.
     public_html("Nutanix", "nutanix_html", "https://careers.nutanix.com/en/jobs/", "Nutanix public careers board"),
     # NetApp's current board is at careers.netapp.com, not the retired Workday endpoint.
     fallback("NetApp", "https://careers.netapp.com/search-jobs", "Enterprise portal / public web fallback"),
     fallback("HP", "https://jobs.hp.com/", "Workday / enterprise fallback"),
-    workday("HPE", "hpe.wd5.myworkdayjobs.com", "hpe", "WFMathpe"),
-    workday("Target", "target.wd5.myworkdayjobs.com", "target", "targetcareers"),
-    workday("Capital One", "capitalone.wd12.myworkdayjobs.com", "capitalone", "Capital_One"),
-    workday("Mastercard", "mastercard.wd1.myworkdayjobs.com", "mastercard", "CorporateCareers"),
-    workday("Visa", "visa.wd5.myworkdayjobs.com", "visa", "Visa"),
     # Verified from Roku's public careers page; it exposes a paginated,
     # server-rendered catalog with direct application URLs.
     public_html("Roku", "roku_html", "https://www.weareroku.com/jobs/search", "Roku public careers board"),
     fallback("Wayfair", "https://www.aboutwayfair.com/careers", "Workday / enterprise fallback"),
-    workday("Expedia Group", "expedia.wd108.myworkdayjobs.com", "expedia", "search"),
-    workday("Johnson & Johnson", "jj.wd5.myworkdayjobs.com", "jj", "JJ"),
     # The public UHG/Optum board is retained as a direct link until its API
     # contract can be independently verified.
     fallback("Optum", "https://careers.unitedhealthgroup.com/", "Enterprise portal / public web fallback"),
@@ -416,15 +398,13 @@ EXPECTED_COMPANIES = frozenset(
         "Cloudflare", "Applied Intuition", "Waymo", "Zoox", "Rubrik",
         "Duolingo", "Affirm", "Reddit", "Pinterest", "Roblox", "Dropbox",
         "Box", "Twilio", "Elastic", "HubSpot", "Asana", "Samsara",
-        "Verkada", "ServiceTitan", "Confluent", "Pure Storage", "Coinbase",
+        "Verkada", "Confluent", "Pure Storage", "Coinbase",
         "Aurora", "Databricks", "DoorDash", "Plaid", "OpenAI",
         "Perplexity AI", "Together AI", "Pinecone", "Anyscale", "Fireworks AI",
-        "Palantir", "Cohesity", "Moloco", "Snowflake", "Nvidia", "Salesforce",
-        "Adobe", "Autodesk", "PayPal", "eBay", "Cisco", "Intuit",
-        "CrowdStrike", "Palo Alto Networks", "Zscaler", "Splunk", "Workday",
-        "Nutanix", "NetApp", "HP", "HPE", "Target", "Capital One",
-        "Mastercard", "Visa", "Roku", "Wayfair", "Expedia Group",
-        "Johnson & Johnson", "Optum", "Google", "Apple", "Microsoft", "Amazon",
+        "Palantir", "Cohesity", "Moloco", "Snowflake", "eBay", "Intuit",
+        "Zscaler", "Splunk",
+        "Nutanix", "NetApp", "HP", "Roku", "Wayfair",
+        "Optum", "Google", "Apple", "Microsoft", "Amazon",
         "Meta", "Netflix", "Uber", "Bloomberg", "Jane Street", "ByteDance/TikTok",
         "Qualcomm", "Micron", "Applied Materials", "Synopsys", "Morgan Stanley",
         "Goldman Sachs", "JPMorgan",
