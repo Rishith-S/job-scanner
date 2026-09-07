@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
-"""Headless runner + email alerter for the entry-level CS job monitor.
+"""Headless runner for the entry-level CS job monitor.
 
 Designed for GitHub Actions (or any cron host):
   - Loads entry_level_cs_job_monitor_colab.py without IPython/notebook deps.
   - Persists state to ./job_state.sqlite3 (committed back to the repo).
-  - Emails NEW/REOPENED jobs when found (Gmail app-password secrets).
+  - Syncs results to Supabase (sync_supabase.py); the shared site is the
+    channel — no email is sent from here.
   - Always logs a source-health summary so failures are visible in Actions.
 
 Usage:
   python3 run_monitor.py                 # normal scheduled run
   python3 run_monitor.py --selfcheck     # verify wiring, no network scan
-  python3 run_monitor.py --send-test-email
 """
 
 from __future__ import annotations
@@ -18,11 +18,8 @@ from __future__ import annotations
 import argparse
 import importlib.util
 import os
-import smtplib
 import sys
 from datetime import datetime, timezone
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 from pathlib import Path
 from types import ModuleType
 
@@ -60,69 +57,9 @@ def load_monitor_module():
 
 
 # ---------------------------------------------------------------------------
-# Email delivery — Resend API preferred, Gmail SMTP fallback
+# Alerts are OFF: the Supabase-backed site is the channel (browse + filters
+# for all friends). This runner only scans, syncs, and logs counts.
 # ---------------------------------------------------------------------------
-def _send_via_resend(subject: str, text_body: str, html_body: str | None,
-                     api_key: str, to_addr: str) -> None:
-    import json as _json
-    import urllib.request
-
-    payload = {
-        "from": os.environ.get("RESEND_FROM", "Job Monitor <onboarding@resend.dev>"),
-        "to": [to_addr],
-        "subject": subject,
-        "text": text_body,
-    }
-    if html_body:
-        payload["html"] = html_body
-    req = urllib.request.Request(
-        "https://api.resend.com/emails",
-        data=_json.dumps(payload).encode(),
-        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-    )
-    with urllib.request.urlopen(req, timeout=30) as resp:
-        if resp.status not in (200, 201):
-            raise RuntimeError(f"Resend returned HTTP {resp.status}")
-    print(f"[email] sent via Resend to {to_addr}")
-
-
-def _send_via_gmail(subject: str, text_body: str, html_body: str | None,
-                    user: str, password: str, to_addr: str) -> None:
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = subject
-    msg["From"] = user
-    msg["To"] = to_addr
-    msg.attach(MIMEText(text_body, "plain", "utf-8"))
-    if html_body:
-        msg.attach(MIMEText(html_body, "html", "utf-8"))
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=30) as server:
-        server.login(user, password)
-        server.sendmail(user, [to_addr], msg.as_string())
-    print(f"[email] sent via Gmail SMTP to {to_addr}")
-
-
-def send_email(subject: str, text_body: str, html_body: str | None = None) -> None:
-    """Deliver via RESEND_API_KEY when present, else GMAIL_USER/GMAIL_APP_PASSWORD."""
-    resend_key = os.environ.get("RESEND_API_KEY", "").strip()
-    gmail_user = os.environ.get("GMAIL_USER", "").strip()
-    gmail_pass = os.environ.get("GMAIL_APP_PASSWORD", "").strip()
-
-    if resend_key:
-        # Unverified-domain accounts may only send to the Resend signup email;
-        # ALERT_TO overrides this after verifying a domain at resend.com/domains.
-        to_addr = os.environ.get("ALERT_TO", "").strip()
-        if not to_addr:
-            print("[email] RESEND_API_KEY set but ALERT_TO empty; skipping.")
-            return
-        _send_via_resend(subject, text_body, html_body, resend_key, to_addr)
-        return
-
-    if gmail_user and gmail_pass:
-        to_addr = os.environ.get("ALERT_TO", "").strip() or gmail_user
-        _send_via_gmail(subject, text_body, html_body, gmail_user, gmail_pass, to_addr)
-        return
-
-    print("[email] no mail credentials found (set RESEND_API_KEY+ALERT_TO or GMAIL_USER/GMAIL_APP_PASSWORD); skipping.")
 
 
 def fmt_ts(value) -> str:
@@ -130,43 +67,6 @@ def fmt_ts(value) -> str:
     if value is None or pd.isna(value):
         return "-"
     return pd.Timestamp(value).strftime("%Y-%m-%d %H:%M")
-
-
-def jobs_text_table(df) -> str:
-    lines = []
-    for _, row in df.iterrows():
-        lines.append(
-            f"* {row['Company']} — {row['Position']}\n"
-            f"    {row['Location']} | {row['Entry Evidence']} | {row['Profile Fit']}\n"
-            f"    first seen: {fmt_ts(row['First Seen (UTC)'])} | state: {row['Monitor State']}\n"
-            f"    apply: {row['URL']}"
-        )
-    return "\n".join(lines)
-
-
-def jobs_html_table(df) -> str:
-    rows = []
-    for _, row in df.iterrows():
-        url = row["URL"]
-        link = f'<a href="{url}">apply</a>' if isinstance(url, str) and url.startswith("http") else (url or "-")
-        rows.append(
-            "<tr>"
-            f"<td><b>{row['Company']}</b></td>"
-            f"<td>{row['Position']}</td>"
-            f"<td>{row['Location']}</td>"
-            f"<td>{row['Entry Evidence']}</td>"
-            f"<td>{row['Monitor State']}</td>"
-            f"<td>{link}</td>"
-            "</tr>"
-        )
-    style = (
-        "body{font-family:-apple-system,Segoe UI,Arial,sans-serif;font-size:14px;color:#222}"
-        "table{border-collapse:collapse;width:100%}"
-        "th,td{border:1px solid #ddd;padding:6px 8px;text-align:left;vertical-align:top}"
-        "th{background:#f5f5f5}"
-    )
-    header = "<tr><th>Company</th><th>Position</th><th>Location</th><th>Entry evidence</th><th>State</th><th>Link</th></tr>"
-    return f"<html><head><style>{style}</style></head><body><h3>New / reopened roles</h3><table>{header}{''.join(rows)}</table></body></html>"
 
 
 def health_summary(health_df) -> str:
@@ -236,17 +136,6 @@ def selfcheck(module) -> int:
     return 0
 
 
-def send_test_email() -> int:
-    stamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-    send_email(
-        "[Job Monitor] test email",
-        f"This is a test of your job monitor alerting pipeline.\nSent: {stamp}",
-        f"<p>This is a <b>test</b> of your job monitor alerting pipeline.<br>Sent: {stamp}</p>",
-    )
-    print("TEST EMAIL SENT")
-    return 0
-
-
 def run_scan(module) -> int:
     started = datetime.now(timezone.utc)
     print(f"[monitor] scan start {started.isoformat()}")
@@ -260,27 +149,40 @@ def run_scan(module) -> int:
 
     print("\n" + health_summary(health_df))
 
+    # Manifest for sync_supabase.py: which companies this run scanned and how
+    # each fared. The sync derives everything else from job_state.sqlite3.
+    import pandas as pd
+
+    manifest = {
+        "finished_at": finished.isoformat(),
+        "slice": os.environ.get("SLICE", "").strip() or "all",
+        "half": os.environ.get("SCAN_HALF", "").strip().upper() or "all",
+        "entries": [
+            {
+                "company": row["Company"],
+                "ats": row["ATS"],
+                "status": row["Scan Status"],
+                "detail": str(row["Detail"])[:300],
+                "portal": str(row["Board URL"])[:300] if not pd.isna(row["Board URL"]) else "",
+                "scanned_at": pd.Timestamp(row["Scanned At (UTC)"]).isoformat()
+                if not pd.isna(row["Scanned At (UTC)"]) else finished.isoformat(),
+            }
+            for _, row in health_df.iterrows()
+        ],
+    }
+    import json as _json
+
+    with open(HERE / "run_manifest.json", "w") as fh:
+        _json.dump(manifest, fh)
+    print(f"[site] manifest wrote {len(manifest['entries'])} companies.")
+
     if not df.empty:
-        stamp = finished.strftime("%Y-%m-%d %H:%M UTC")
         n_new = int((df["Monitor State"] == "NEW").sum())
         n_reopened = int((df["Monitor State"] == "REOPENED").sum())
-        slic = os.environ.get("SLICE", "").strip()
-        tag = f" slice {slic}/3" if slic in ("1", "2", "3") else ""
-        subject = f"[Job Monitor{tag}] {len(df)} new role(s) — {stamp}"
-        text_body = (
-            f"{n_new} NEW / {n_reopened} REOPENED role(s) since last successful scan.\n\n"
-            f"{jobs_text_table(df)}\n\n"
-            f"{health_summary(health_df)}\n"
-        )
-        html_body = (
-            jobs_html_table(df)
-            + "<hr><pre style='font-size:11px;color:#666'>"
-            + health_summary(health_df).replace("<", "&lt;")
-            + "</pre>"
-        )
-        send_email(subject, text_body, html_body)
+        print(f"[site] {len(df)} new/reopened ({n_new} NEW / {n_reopened} REOPENED) — "
+              f"see Supabase-backed site; no email sent.")
     else:
-        print("[email] no new jobs; no email sent.")
+        print("[site] no new jobs.")
 
     return 0
 
@@ -288,7 +190,6 @@ def run_scan(module) -> int:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--selfcheck", action="store_true", help="verify wiring, no network")
-    parser.add_argument("--send-test-email", action="store_true", help="verify SMTP secrets")
     args = parser.parse_args()
 
     module = load_monitor_module()
@@ -297,8 +198,6 @@ def main() -> int:
 
     if args.selfcheck:
         return selfcheck(module)
-    if args.send_test_email:
-        return send_test_email()
     return run_scan(module)
 
 
