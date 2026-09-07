@@ -270,23 +270,12 @@ TARGETS: List[Dict[str, Any]] = [
     greenhouse("Box", "boxinc", "https://careers.box.com/"),
     greenhouse("Twilio", "twilio", "https://www.twilio.com/en-us/company/jobs"),
     greenhouse("Elastic", "elastic", "https://www.elastic.co/careers"),
-    # HubSpot's former Greenhouse board now returns 404. Keep its live,
-    # first-party board visible instead of emitting a fabricated empty scan.
-    fallback("HubSpot", "https://www.hubspot.com/careers/jobs", "Enterprise portal / public web fallback"),
     greenhouse("Asana", "asana", "https://asana.com/jobs"),
     greenhouse("Samsara", "samsara", "https://www.samsara.com/company/careers"),
     greenhouse("Verkada", "verkada", "https://www.verkada.com/careers/"),
-    # The current public page is browser-rendered/rate-limited to plain HTTP;
-    # retain the first-party link rather than pretend it was fully scanned.
-    fallback("Confluent", "https://careers.confluent.io/jobs", "Enterprise portal / public web fallback"),
     greenhouse("Pure Storage", "purestorage", "https://www.purestorage.com/company/careers.html"),
     greenhouse("Coinbase", "coinbase", "https://www.coinbase.com/careers/positions"),
-    # Aurora's former public Greenhouse board returns 404.
-    fallback("Aurora", "https://aurora.tech/careers", "Enterprise portal / public web fallback"),
     greenhouse("Databricks", "databricks", "https://www.databricks.com/company/careers/open-positions"),
-    # DoorDash's current WordPress board blocks plain HTTP with a WAF. Its
-    # official search URL remains available in health output for direct use.
-    fallback("DoorDash", "https://careersatdoordash.com/job-search/", "Enterprise portal / public web fallback"),
     # Plaid's legacy Greenhouse endpoint returns 404; its public Lever board
     # remains the stable API contract (including a truthful zero-posting scan).
     lever("Plaid", "plaid", "https://plaid.com/careers/", "Lever (current public careers board)"),
@@ -298,53 +287,27 @@ TARGETS: List[Dict[str, Any]] = [
     ashby("Anyscale", "anyscale", "https://www.anyscale.com/careers"),
     ashby("Fireworks AI", "fireworks", "https://fireworks.ai/careers"),
     lever("Palantir", "palantir", "https://jobs.lever.co/palantir"),
-    # The prior Lever board was retired.  Its page differs between browser and
-    # plain HTTP responses, so it remains an honest first-party fallback.
-    fallback("Cohesity", "https://www.cohesity.com/careers/open-positions/", "Enterprise portal / public web fallback"),
     # Verified from Moloco's public careers page: job-boards.greenhouse.io/moloco
     greenhouse("Moloco", "moloco", "https://www.moloco.com/careers", "Greenhouse (current public careers board)"),
     # Snowflake's Phenom page server-renders paginated job data in phApp.ddo.
     # This avoids relying on an undocumented browser-only widget request.
     phenom_html("Snowflake", "https://careers.snowflake.com/us/en/search-results"),
     # eBay upgraded from fallback to a live-verified server-rendered Phenom adapter.
-    # Intuit's current public board is not the retired Workday endpoint.
-    fallback("Intuit", "https://jobs.intuit.com/search-jobs", "Enterprise portal / public web fallback"),
-    # Verified from the public career site and its public Workday talent-community URL.
     # Verified from Zscaler's public search page: job-boards.greenhouse.io/zscaler
     greenhouse("Zscaler", "zscaler", "https://www.zscaler.com/careers/search", "Greenhouse (current public careers board)"),
-    # The public Splunk Workday endpoint currently rejects the required CXS
-    # request contract (422); do not treat that response as a zero-job scan.
-    fallback("Splunk", "https://careers.cisco.com/global/en/splunk/search-page", "Enterprise portal / public web fallback"),
     # Nutanix's prior Workday board was retired; this public board declares
     # its result total and paginated, stable requisition IDs.
     public_html("Nutanix", "nutanix_html", "https://careers.nutanix.com/en/jobs/", "Nutanix public careers board"),
-    # NetApp's current board is at careers.netapp.com, not the retired Workday endpoint.
-    fallback("NetApp", "https://careers.netapp.com/search-jobs", "Enterprise portal / public web fallback"),
-    fallback("HP", "https://jobs.hp.com/", "Workday / enterprise fallback"),
     # Verified from Roku's public careers page; it exposes a paginated,
     # server-rendered catalog with direct application URLs.
     public_html("Roku", "roku_html", "https://www.weareroku.com/jobs/search", "Roku public careers board"),
-    fallback("Wayfair", "https://www.aboutwayfair.com/careers", "Workday / enterprise fallback"),
-    # The public UHG/Optum board is retained as a direct link until its API
-    # contract can be independently verified.
-    fallback("Optum", "https://careers.unitedhealthgroup.com/", "Enterprise portal / public web fallback"),
     google_html("Google", "https://www.google.com/about/careers/applications/jobs/results/?location=United%20States"),
     apple_html("Apple", "https://jobs.apple.com/en-us/search?location=united-states-USA"),
     microsoft("Microsoft", "https://apply.careers.microsoft.com/careers?sort_by=timestamp"),
     amazon("Amazon", "https://www.amazon.jobs/en/search?base_query=software+development+engineer+new+grad&loc_query=United+States"),
-    fallback("Meta", "https://www.metacareers.com/jobs/?q=software%20engineer%20university%20grad"),
-    fallback("Netflix", "https://jobs.netflix.com/search?q=software%20engineer&location=United%20States"),
-    fallback("Uber", "https://www.uber.com/global/en/careers/list/?query=software%20engineer&location=United%20States"),
-    fallback("Bloomberg", "https://www.bloomberg.com/company/careers/search/?query=software%20engineer&location=United%20States"),
-    fallback("Jane Street", "https://www.janestreet.com/join-jane-street/open-roles/?query=software"),
-    fallback("ByteDance/TikTok", "https://jobs.bytedance.com/en/position?keywords=software%20engineer&location=United%20States"),
     eightfold("Qualcomm", "qualcomm.eightfold.ai", "qualcomm.com", "https://qualcomm.eightfold.ai/careers"),
     eightfold("Micron", "micron.eightfold.ai", "micron.com", "https://micron.eightfold.ai/careers"),
     eightfold("Applied Materials", "appliedmaterials.eightfold.ai", "appliedmaterials.com", "https://appliedmaterials.eightfold.ai/careers"),
-    fallback("Synopsys", "https://careers.synopsys.com/search-jobs?keywords=software%20engineer&location=United%20States"),
-    fallback("Morgan Stanley", "https://www.morganstanley.com/careers/career-opportunities-search?keyword=software%20engineer"),
-    fallback("Goldman Sachs", "https://higher.gs.com/roles?query=software%20engineer"),
-    fallback("JPMorgan", "https://jpmc.fa.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1001/requisitions?keyword=software%20engineer"),
     # --- 2026-08-24 expansion: live-verified public ATS contracts ---
     greenhouse("MongoDB", "mongodb", "https://www.mongodb.com/company/careers", "Greenhouse (live-verified)"),
     greenhouse("Robinhood", "robinhood", "https://careers.robinhood.com/", "Greenhouse (live-verified)"),
@@ -358,38 +321,6 @@ TARGETS: List[Dict[str, Any]] = [
         "Greenhouse (live-verified)",
     ),
     phenom_html("eBay", "https://jobs.ebayinc.com/us/en/search-results"),
-    # --- 2026-09-07 wishlist batch: probed Greenhouse/Lever/Ashby (all 404,
-    # board confirmed custom) — portal links until an API contract verifies. ---
-    fallback("ADP", "https://jobs.adp.com/", "Enterprise portal / public web fallback"),
-    fallback("CommScope", "https://careers.commscope.com/", "Enterprise portal / public web fallback"),
-    fallback("Fiserv", "https://www.careers.fiserv.com/", "Enterprise portal / public web fallback"),
-    fallback("Informatica", "https://www.informatica.com/careers/", "Enterprise portal / public web fallback"),
-    fallback("Yahoo", "https://www.yahooinc.com/careers/", "Enterprise portal / public web fallback"),
-    fallback("Viasat", "https://careers.viasat.com/", "Enterprise portal / public web fallback"),
-    fallback("BlackRock", "https://careers.blackrock.com/", "Enterprise portal / public web fallback"),
-    fallback("SAP Labs", "https://jobs.sap.com/", "Enterprise portal / public web fallback"),
-    fallback("KLA", "https://www.kla.com/careers/", "Enterprise portal / public web fallback"),
-    fallback("Snapchat", "https://careers.snap.com/", "Enterprise portal / public web fallback"),
-    fallback("Tencent", "https://careers.tencent.com/", "Enterprise portal / public web fallback"),
-    fallback("GitHub", "https://www.github.careers/careers", "Enterprise portal / public web fallback"),
-    fallback("Tesla", "https://www.tesla.com/careers", "Enterprise portal / public web fallback"),
-    fallback("Texas Instruments", "https://careers.ti.com/", "Enterprise portal / public web fallback"),
-    fallback("F5", "https://www.f5.com/company/careers", "Enterprise portal / public web fallback"),
-    fallback("NTT Data", "https://us.careers.nttdata.com/", "Enterprise portal / public web fallback"),
-    fallback("Y Combinator", "https://www.ycombinator.com/jobs", "Startup jobs board / fallback"),
-    fallback("ServiceNow", "https://careers.servicenow.com/", "Enterprise portal / public web fallback"),
-    fallback("Bank of America", "https://careers.bankofamerica.com/", "Enterprise portal / public web fallback"),
-    fallback("Arm", "https://careers.arm.com/", "Enterprise portal / public web fallback"),
-    fallback("Atlassian", "https://www.atlassian.com/company/careers", "Enterprise portal / public web fallback"),
-    fallback("Oracle", "https://www.oracle.com/corporate/careers/", "Enterprise portal / public web fallback"),
-    fallback("Fortinet", "https://www.fortinet.com/corporate/careers", "Enterprise portal / public web fallback"),
-    fallback("Akamai", "https://www.akamai.com/careers", "Enterprise portal / public web fallback"),
-    fallback("Etsy", "https://www.etsy.com/careers", "Enterprise portal / public web fallback"),
-    fallback("American Express", "https://www.americanexpress.com/en-us/careers/", "Enterprise portal / public web fallback"),
-    fallback("Fidelity Investments", "https://jobs.fidelity.com/", "Enterprise portal / public web fallback"),
-    fallback("Charles Schwab", "https://www.schwabjobs.com/", "Enterprise portal / public web fallback"),
-    fallback("Epic Systems", "https://careers.epic.com/", "Enterprise portal / public web fallback"),
-    fallback("FactSet", "https://www.factset.com/careers", "Enterprise portal / public web fallback"),
 ]
 
 EXPECTED_COMPANIES = frozenset(
@@ -397,26 +328,17 @@ EXPECTED_COMPANIES = frozenset(
         "Anthropic", "Scale AI", "Stripe", "Figma", "Notion", "Datadog",
         "Cloudflare", "Applied Intuition", "Waymo", "Zoox", "Rubrik",
         "Duolingo", "Affirm", "Reddit", "Pinterest", "Roblox", "Dropbox",
-        "Box", "Twilio", "Elastic", "HubSpot", "Asana", "Samsara",
-        "Verkada", "Confluent", "Pure Storage", "Coinbase",
-        "Aurora", "Databricks", "DoorDash", "Plaid", "OpenAI",
+        "Box", "Twilio", "Elastic", "Asana", "Samsara",
+        "Verkada", "Pure Storage", "Coinbase",
+        "Databricks", "Plaid", "OpenAI",
         "Perplexity AI", "Together AI", "Pinecone", "Anyscale", "Fireworks AI",
-        "Palantir", "Cohesity", "Moloco", "Snowflake", "eBay", "Intuit",
-        "Zscaler", "Splunk",
-        "Nutanix", "NetApp", "HP", "Roku", "Wayfair",
-        "Optum", "Google", "Apple", "Microsoft", "Amazon",
-        "Meta", "Netflix", "Uber", "Bloomberg", "Jane Street", "ByteDance/TikTok",
-        "Qualcomm", "Micron", "Applied Materials", "Synopsys", "Morgan Stanley",
-        "Goldman Sachs", "JPMorgan",
+        "Palantir", "Moloco", "Snowflake", "eBay",
+        "Zscaler",
+        "Nutanix", "Roku",
+        "Google", "Apple", "Microsoft", "Amazon",
+        "Qualcomm", "Micron", "Applied Materials",
         "MongoDB", "Robinhood", "Okta", "Block (Square / Cash App)", "LinkedIn",
         "Samsung Research America",
-        # --- 2026-09-07 wishlist batch (portal links; see TARGETS comment) ---
-        "ADP", "CommScope", "Fiserv", "Informatica", "Yahoo", "Viasat",
-        "BlackRock", "SAP Labs", "KLA", "Snapchat", "Tencent", "GitHub",
-        "Tesla", "Texas Instruments", "F5", "NTT Data", "Y Combinator",
-        "ServiceNow", "Bank of America", "Arm", "Atlassian", "Oracle",
-        "Fortinet", "Akamai", "Etsy", "American Express",
-        "Fidelity Investments", "Charles Schwab", "Epic Systems", "FactSet",
     }
 )
 EXPECTED_COMPANY_COUNT = len(EXPECTED_COMPANIES)
