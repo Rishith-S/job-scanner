@@ -50,6 +50,7 @@ jobs:
 
       - name: Run monitor scan + email alerts
         env:
+          SLICE: ${{ secrets.SLICE }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           ALERT_TO: ${{ secrets.ALERT_TO }}
           GMAIL_USER: ${{ secrets.GMAIL_USER }}

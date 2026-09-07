@@ -198,6 +198,24 @@ def apply_scan_half(module) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Account slices: three accounts (friends) each own a fixed third of the list
+# via SLICE=1/2/3, sharing one Supabase DB. Combined with SCAN_HALF above,
+# each run scans a sixth (~20 companies, ~4 min). Slices are disjoint, and
+# per-company baselines live in the shared DB, so a company moving slices
+# after a future add keeps its history. Unset SLICE = whole list (local use).
+# ---------------------------------------------------------------------------
+def apply_slice(module) -> None:
+    slic = os.environ.get("SLICE", "all").strip()
+    if slic not in ("1", "2", "3"):
+        return
+    names = sorted(t["company"] for t in module.TARGETS)
+    size = (len(names) + 2) // 3
+    keep = set(names[(int(slic) - 1) * size:int(slic) * size])
+    module.TARGETS = [t for t in module.TARGETS if t["company"] in keep]
+    print(f"[slices] SLICE={slic}/3: keeping {len(module.TARGETS)}/{len(names)} companies")
+
+
+# ---------------------------------------------------------------------------
 # Modes
 # ---------------------------------------------------------------------------
 def selfcheck(module) -> int:
@@ -207,11 +225,11 @@ def selfcheck(module) -> int:
     print(f"budget_s: {module.SOURCE_SCAN_BUDGET_SECONDS}")
     print(f"db_path: {module.STATE_DB_PATH}")
     half = os.environ.get("SCAN_HALF", "all").strip().upper()
-    if half in ("A", "B"):
+    slic = os.environ.get("SLICE", "all").strip()
+    if half in ("A", "B") or slic in ("1", "2", "3"):
         assert set(t["company"] for t in module.TARGETS) <= set(module.EXPECTED_COMPANIES)
-        assert len(module.TARGETS) in (len(module.EXPECTED_COMPANIES) // 2,
-                                       (len(module.EXPECTED_COMPANIES) + 1) // 2)
-        print(f"SELFCHECK PASS (half {half})")
+        assert 0 < len(module.TARGETS) <= len(module.EXPECTED_COMPANIES)
+        print(f"SELFCHECK PASS (slice {slic} half {half})")
     else:
         assert len(module.TARGETS) == module.EXPECTED_COMPANY_COUNT
         print("SELFCHECK PASS")
@@ -246,7 +264,9 @@ def run_scan(module) -> int:
         stamp = finished.strftime("%Y-%m-%d %H:%M UTC")
         n_new = int((df["Monitor State"] == "NEW").sum())
         n_reopened = int((df["Monitor State"] == "REOPENED").sum())
-        subject = f"[Job Monitor] {len(df)} new role(s) — {stamp}"
+        slic = os.environ.get("SLICE", "").strip()
+        tag = f" slice {slic}/3" if slic in ("1", "2", "3") else ""
+        subject = f"[Job Monitor{tag}] {len(df)} new role(s) — {stamp}"
         text_body = (
             f"{n_new} NEW / {n_reopened} REOPENED role(s) since last successful scan.\n\n"
             f"{jobs_text_table(df)}\n\n"
@@ -272,6 +292,7 @@ def main() -> int:
     args = parser.parse_args()
 
     module = load_monitor_module()
+    apply_slice(module)
     apply_scan_half(module)
 
     if args.selfcheck:
