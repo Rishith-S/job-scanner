@@ -325,6 +325,22 @@ TARGETS: List[Dict[str, Any]] = [
     ashby("One Robot", "onerobot", "https://jobs.ashbyhq.com/onerobot"),
     ashby("Sim", "sim", "https://jobs.ashbyhq.com/sim"),
     phenom_html("eBay", "https://jobs.ebayinc.com/us/en/search-results"),
+    # --- Top H-1B Sponsors: Consumer, Quant/FinTech, AI & DevTools ---
+    greenhouse("DoorDash", "doordashusa", "https://careers.doordash.com/"),
+    greenhouse("Airbnb", "airbnb", "https://careers.airbnb.com/"),
+    greenhouse("Lyft", "lyft", "https://www.lyft.com/careers"),
+    greenhouse("Instacart", "instacart", "https://instacart.careers/"),
+    lever("Spotify", "spotify", "https://www.lifeatspotify.com/jobs"),
+    greenhouse("Jane Street", "janestreet", "https://www.janestreet.com/join-jane-street/open-roles/"),
+    greenhouse("Jump Trading", "jumptrading", "https://www.jumptrading.com/careers/"),
+    greenhouse("Akuna Capital", "akunacapital", "https://akunacapital.com/careers"),
+    greenhouse("Point72", "point72", "https://careers.point72.com/"),
+    ashby("Ramp", "ramp", "https://ramp.com/careers"),
+    greenhouse("GitLab", "gitlab", "https://about.gitlab.com/jobs/"),
+    greenhouse("Vercel", "vercel", "https://vercel.com/careers"),
+    ashby("Supabase", "supabase", "https://supabase.com/careers"),
+    ashby("Linear", "linear", "https://linear.app/careers"),
+    ashby("Character.ai", "character", "https://character.ai/careers"),
 ]
 
 EXPECTED_COMPANIES = frozenset(
@@ -344,6 +360,9 @@ EXPECTED_COMPANIES = frozenset(
         "MongoDB", "Robinhood", "Okta", "Block (Square / Cash App)", "LinkedIn",
         "Samsung Research America",
         "Conductor", "One Robot", "Sim",
+        "DoorDash", "Airbnb", "Lyft", "Instacart", "Spotify",
+        "Jane Street", "Jump Trading", "Akuna Capital", "Point72", "Ramp",
+        "GitLab", "Vercel", "Supabase", "Linear", "Character.ai",
     }
 )
 EXPECTED_COMPANY_COUNT = len(EXPECTED_COMPANIES)
